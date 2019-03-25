@@ -1,0 +1,17 @@
+{
+  "name": "finncars2",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "node node_modules/ts-node/dist/bin.js ./src/index.ts"
+  },
+  "dependencies": {
+    "puppeteer": "^1.13.0",
+    "ts-node": "^8.0.3",
+    "typescript": "^3.3.4000"
+  },
+  "devDependencies": {
+    "@types/node": "^11.11.6"
+  }
+}
