@@ -15,8 +15,9 @@ export interface CarHeader {
 
 export interface CarDetail {
     finnkode: string;
-    equipment?: string;
-    properties?: Map<string, string>;
+    equipment?: string[];
+    properties?: string[];
+    description?: string;
 }
 
 
@@ -72,40 +73,42 @@ async function getHeaders() {
     return carHeaders;
 }
 
-export async function getDetails(carHeaders: CarHeader[]) {
+export async function getDetails(carHeaders: CarHeader[]): Promise<CarDetail[]> {
     const browser = await launch({ headless: true});
+    // const browser = await launch({ devtools: true});
     const page = await browser.newPage();
     let carDetails: CarDetail[] = [];
 
     for (let i=0; i< carHeaders.length; i++ ){
         await page.goto(carHeaders[i].url, {waitUntil: 'networkidle2'});
-        const carDetailsPage: CarDetail[] = await page.evaluate(() => {
+        const carDetailsPage: CarDetail = await page.evaluate(() => {
             const carDetail: CarDetail = {
                 finnkode: this.href,
-                properties: new Map()
+                properties: [],
+                equipment: []
             };
 
-            carDetails = Array.from(document.querySelectorAll('.list--bullets li'))
+            carDetails = Array.from(document.querySelectorAll('.list--cols1to2 li'))
                 .map((e:Element) => {
-                    carDetail.equipment = carDetail.equipment + e.innerHTML;
-
+                    carDetail.equipment.push(e.innerHTML);
                     return carDetail;
                 });
 
-            carDetails = Array.from(document.querySelectorAll('.definition-list--cols1to2 dt'))
-                .map((e:Element) => {
-                    console.log('DT', e.innerHTML);
-                    console.log('DD', e.nextElementSibling.innerHTML);
-                    carDetail.properties = carDetail.properties.set(e.innerHTML, e.nextElementSibling.innerHTML);
+            carDetails = Array.from(document.querySelectorAll('.definition-list--cols1to2 dt')).
+                map((e:Element) => {
+                    if (['Omregistrering','Pris eks omreg', 'Årsavgift'].indexOf(e.innerHTML) === -1){
+                        const o:object = {};
+                        o[e.innerHTML] = e.nextElementSibling.innerHTML;
+                        carDetail.properties.push(JSON.stringify(o));
+                        return carDetail;
 
-                    return carDetail;
+                    }
                 });
 
+            carDetail.description = document.querySelector('.panel .preserve-linebreaks').innerHTML;
 
-            console.log(carDetails);
-            return carDetails;
+            return carDetail;
         });
-
 
         //can only return serialized values
 
@@ -117,9 +120,6 @@ export async function getDetails(carHeaders: CarHeader[]) {
     browser.close();
     return carDetails;
 }
-
-
-
 
 main();
 
